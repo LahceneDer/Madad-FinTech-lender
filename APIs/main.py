@@ -1,18 +1,20 @@
+import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware  
 from pydantic import BaseModel
 
 app = FastAPI()
 
+REACT_APP_URL = os.getenv("REACT_APP_URL", "http://localhost:3545")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  
+    allow_origins=['*'],  
     allow_credentials=True,
     allow_methods=["*"],  
     allow_headers=["*"],  
 )
 
-# Define the input data structure (what the MSME sends)
 class MSMEApplication(BaseModel):
     average_transactions: float  
     credit_score: int           
@@ -20,7 +22,6 @@ class MSMEApplication(BaseModel):
     has_bank_statement: bool    
     has_financial_report: bool  
 
-# API endpoint to calculate and assign the lender
 @app.post("/assign-lender/")
 async def assign_lender(application: MSMEApplication):
     # Step 1: Get the input data
@@ -30,7 +31,6 @@ async def assign_lender(application: MSMEApplication):
     has_bank_statement = application.has_bank_statement
     has_financial_report = application.has_financial_report
 
-    # Step 2: Check if CR is provided (mandatory)
     if "CR" not in documents:
         raise HTTPException(status_code=400, detail="Commercial Registration (CR) is mandatory")
 

@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./APIs
+      dockerfile: Dockerfile
+    ports:
+      - "8055:8000"
+    environment:
+      - PORT=8055
+      - REACT_APP_URL=http://localhost:3545  
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    ports:
+      - "3545:80"
+    depends_on:
+      - backend
+    environment:
+      - REACT_APP_API_URL=http://backend:8055  
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

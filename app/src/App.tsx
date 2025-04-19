@@ -20,7 +20,8 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import './App.css';
 
 const App: React.FC = () => {
-  // State for the form data
+  const apiBase = process.env.REACT_APP_API_URL;
+
   const [formData, setFormData] = useState<MSMEApplication>({
     average_transactions: 0,
     credit_score: 0,
@@ -29,12 +30,10 @@ const App: React.FC = () => {
     has_financial_report: false,
   });
 
-  // State for the result, error, and loading
   const [result, setResult] = useState<LenderResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
 
-  // Handle form changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
 
@@ -53,21 +52,18 @@ const App: React.FC = () => {
     }
   };
 
-  // Handle form submission
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
     setResult(null);
     setLoading(true);
 
-    // Validate that CR is provided (mandatory)
     if (!formData.documents.includes('CR')) {
       setError('Commercial Registration (CR) is mandatory.');
       setLoading(false);
       return;
     }
 
-    // Validate inputs
     if (formData.credit_score < 0 || formData.credit_score > 800) {
       setError('Credit Score must be between 0 and 800.');
       setLoading(false);
@@ -80,7 +76,7 @@ const App: React.FC = () => {
     }
 
     try {
-      const response = await axios.post<LenderResponse>('http://localhost:3545/assign-lender/', formData);
+      const response = await axios.post<LenderResponse>(`http://localhost:8055/assign-lender/`, formData);      
       setResult(response.data);
     } catch (err) {
       const error: any = err as AxiosError;
