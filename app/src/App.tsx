@@ -1,9 +1,26 @@
 import React, { useState, FormEvent } from 'react';
 import axios, { AxiosError } from 'axios';
 import { MSMEApplication, LenderResponse } from './types';
+import { BeatLoader } from 'react-spinners';
+import {
+  Container,
+  Card,
+  CardContent,
+  Typography,
+  TextField,
+  FormControlLabel,
+  Checkbox,
+  Button,
+  Alert,
+  Box,
+  CircularProgress,
+  Fade,
+} from '@mui/material';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import './App.css';
 
 const App: React.FC = () => {
+  // State for the form data
   const [formData, setFormData] = useState<MSMEApplication>({
     average_transactions: 0,
     credit_score: 0,
@@ -12,10 +29,12 @@ const App: React.FC = () => {
     has_financial_report: false,
   });
 
+  // State for the result, error, and loading
   const [result, setResult] = useState<LenderResponse | null>(null);
-
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
 
+  // Handle form changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
 
@@ -37,10 +56,26 @@ const App: React.FC = () => {
   // Handle form submission
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError(null); 
+    setError(null);
+    setResult(null);
+    setLoading(true);
 
+    // Validate that CR is provided (mandatory)
     if (!formData.documents.includes('CR')) {
       setError('Commercial Registration (CR) is mandatory.');
+      setLoading(false);
+      return;
+    }
+
+    // Validate inputs
+    if (formData.credit_score < 0 || formData.credit_score > 800) {
+      setError('Credit Score must be between 0 and 800.');
+      setLoading(false);
+      return;
+    }
+    if (formData.average_transactions <= 0) {
+      setError('Average Monthly Transactions must be greater than 0.');
+      setLoading(false);
       return;
     }
 
@@ -50,99 +85,155 @@ const App: React.FC = () => {
     } catch (err) {
       const error: any = err as AxiosError;
       setError(error.response?.data?.detail || 'Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="App">
-      <h1>Madad FinTech - Lender Assignment</h1>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Average Monthly Transactions (QAR):</label>
-          <input
-            type="number"
-            name="average_transactions"
-            value={formData.average_transactions}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <div>
-          <label>Credit Score (0-800):</label>
-          <input
-            type="number"
-            name="credit_score"
-            value={formData.credit_score}
-            onChange={handleChange}
-            min="0"
-            max="800"
-            required
-          />
-        </div>
-        <div>
-          <label>Documents Provided:</label><br />
-          <input
-            type="checkbox"
-            name="documents"
-            value="CR"
-            onChange={handleChange}
-          /> Commercial Registration (CR, Mandatory)<br />
-          <input
-            type="checkbox"
-            name="documents"
-            value="Trade License"
-            onChange={handleChange}
-          /> Trade License<br />
-          <input
-            type="checkbox"
-            name="documents"
-            value="Establishment Certificate"
-            onChange={handleChange}
-          /> Establishment Certificate<br />
-          <input
-            type="checkbox"
-            name="documents"
-            value="Tax Card"
-            onChange={handleChange}
-          /> Tax Card<br />
-        </div>
-        <div>
-          <label>
-            <input
-              type="checkbox"
-              name="has_bank_statement"
-              checked={formData.has_bank_statement}
-              onChange={handleChange}
-            /> Bank Statement Provided
-          </label>
-        </div>
-        <div>
-          <label>
-            <input
-              type="checkbox"
-              name="has_financial_report"
-              checked={formData.has_financial_report}
-              onChange={handleChange}
-            /> Audited Financial Report Provided
-          </label>
-        </div>
-        <button type="submit">Assign Lender</button>
-      </form>
+    <Container maxWidth="sm" sx={{ py: 4 }}>
+      <Typography variant="h4" align="center" gutterBottom color="primary">
+        Madad FinTech - Lender Assignment
+      </Typography>
 
-      {error && (
-        <div style={{ color: 'red', marginTop: '10px' }}>
-          <p>Error: {error}</p>
-        </div>
-      )}
+      <Card elevation={3} sx={{ borderRadius: 3 }}>
+        <CardContent>
+          <form onSubmit={handleSubmit}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <TextField
+                label="Average Monthly Transactions (QAR)"
+                type="number"
+                name="average_transactions"
+                value={formData.average_transactions}
+                onChange={handleChange}
+                fullWidth
+                required
+                variant="outlined"
+                InputProps={{ inputProps: { min: 1 } }}
+              />
+              <TextField
+                label="Credit Score (0-800)"
+                type="number"
+                name="credit_score"
+                value={formData.credit_score}
+                onChange={handleChange}
+                fullWidth
+                required
+                variant="outlined"
+                InputProps={{ inputProps: { min: 0, max: 800 } }}
+              />
+              <Typography variant="subtitle1">Documents Provided:</Typography>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    name="documents"
+                    value="CR"
+                    onChange={handleChange}
+                    color="primary"
+                  />
+                }
+                label="Commercial Registration (CR, Mandatory)"
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    name="documents"
+                    value="Trade License"
+                    onChange={handleChange}
+                    color="primary"
+                  />
+                }
+                label="Trade License"
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    name="documents"
+                    value="Establishment Certificate"
+                    onChange={handleChange}
+                    color="primary"
+                  />
+                }
+                label="Establishment Certificate"
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    name="documents"
+                    value="Tax Card"
+                    onChange={handleChange}
+                    color="primary"
+                  />
+                }
+                label="Tax Card"
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    name="has_bank_statement"
+                    checked={formData.has_bank_statement}
+                    onChange={handleChange}
+                    color="primary"
+                  />
+                }
+                label="Bank Statement Provided"
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    name="has_financial_report"
+                    checked={formData.has_financial_report}
+                    onChange={handleChange}
+                    color="primary"
+                  />
+                }
+                label="Audited Financial Report Provided"
+              />
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                size="large"
+                disabled={loading}
+                startIcon={loading ? <CircularProgress size={20} /> : null}
+                sx={{ mt: 2, py: 1.5, borderRadius: 2 }}
+              >
+                {loading ? 'Assigning...' : 'Assign Lender'}
+              </Button>
+            </Box>
+          </form>
 
-      {result && (
-        <div>
-          <h2>Result</h2>
-          <p>Chosen Lender: {result.chosen_lender}</p>
-          <p>Credit Limit: QAR {result.credit_limit}</p>
-        </div>
-      )}
-    </div>
+          {error && (
+            <Fade in={!!error}>
+              <Alert severity="error" sx={{ mt: 2 }}>
+                {error}
+              </Alert>
+            </Fade>
+          )}
+
+          {result && (
+            <Fade in={!!result}>
+              <Box sx={{ mt: 3 }}>
+                <Card sx={{ bgcolor: 'success.light', color: 'success.contrastText', borderRadius: 2 }}>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                      <CheckCircleIcon />
+                      <Typography variant="h6">Success!</Typography>
+                    </Box>
+                    <Typography variant="body1">
+                      <strong>Chosen Lender:</strong> {result.chosen_lender}
+                    </Typography>
+                    <Typography variant="body1">
+                      <strong>Credit Limit:</strong> QAR {result.credit_limit.toLocaleString()}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Box>
+            </Fade>
+          )}
+        </CardContent>
+      </Card>
+    </Container>
   );
 };
 
